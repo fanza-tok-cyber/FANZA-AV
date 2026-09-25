@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FANZA AV</title>
+<style>
+  :root {
+    --accent: #c0392b;
+    --accent2: #e74c3c;
+    --bg: #080808;
+    --text: #f0e8e8;
+    --muted: #8a6060;
+    --border: #2a1010;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  header {
+    padding: 12px 14px;
+    background: #050303;
+    border-bottom: 1px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 2px;
+  }
+  #search {
+    flex: 1;
+    padding: 8px 12px;
+    background: #100808;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .btn {
+    background: #100808;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 38px;
+    height: 38px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .status {
+    padding: 6px 14px;
+    background: #0a0404;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .controls {
+    padding: 8px 12px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+  }
+  .filter {
+    padding: 6px 14px;
+    background: #100808;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .filter.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  #feed {
+    height: calc(100dvh - 140px);
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+  }
+  .item {
+    height: 100%;
+    scroll-snap-align: start;
+    position: relative;
+    background: #050303;
+  }
+  .item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 40%, transparent 70%);
+  }
+  .info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 16px;
+    z-index: 5;
+  }
+  .title {
+    font-size: 15px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .price {
+    display: inline-block;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--accent);
+    color: var(--accent2);
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+  .watch-btn {
+    display: block;
+    background: linear-gradient(135deg, #8b1a1a, var(--accent));
+    color: white;
+    text-align: center;
+    padding: 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  /* モーダル */
+  #modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #modal.open { display: flex; }
+  .modal-box {
+    background: #0d0505;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .modal-box h2 {
+    color: var(--accent2);
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .modal-box label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 12px 0 4px;
+  }
+  .modal-box input {
+    width: 100%;
+    padding: 12px;
+    background: #080303;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .save-btn {
+    background: var(--accent);
+    color: white;
+  }
+  .cancel-btn {
+    background: #222;
+    color: #888;
+  }
+  .empty {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AV</h1>
+  <input type="text" id="search" placeholder="女優名・タイトルで検索...">
+  <div class="btn" id="setup-btn">⚙</div>
+</header>
+
+<div class="status">
+  <span id="status-text">未設定</span>
+  <span id="last-update">—</span>
+</div>
+
+<div class="controls">
+  <div class="filter active" data-genre="all">すべて</div>
+  <div class="filter" data-genre="単体作品">単体作品</div>
+  <div class="filter" data-genre="巨乳">巨乳</div>
+  <div class="filter" data-genre="熟女">熟女・人妻</div>
+  <div class="filter" data-genre="素人">素人</div>
+  <div class="filter" data-genre="女子校生">女子校生</div>
+  <div class="filter" data-genre="コスプレ">コスプレ</div>
+</div>
+
+<div id="feed">
+  <div class="empty">⚙ ボタンを押して設定してください</div>
+</div>
+
+<!-- 設定モーダル -->
+<div id="modal">
+  <div class="modal-box">
+    <h2>⚙ 設定</h2>
+    <label>GASプロキシURL</label>
+    <input type="text" id="proxy-url" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+    <label>アフィリエイトID</label>
+    <input type="text" id="affiliate-id" placeholder="gotomask-990">
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">閉じる</button>
+      <button class="save-btn" onclick="saveSettings()">保存して取得</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let proxyUrl = localStorage.getItem('proxyUrl') || '';
+let affiliateId = localStorage.getItem('affiliateId') || 'gotomask-990';
+let allItems = [];
+
+document.getElementById('setup-btn').onclick = openModal;
+
+function openModal() {
+  document.getElementById('proxy-url').value = proxyUrl;
+  document.getElementById('affiliate-id').value = affiliateId;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveSettings() {
+  proxyUrl = document.getElementById('proxy-url').value.trim();
+  affiliateId = document.getElementById('affiliate-id').value.trim();
+  localStorage.setItem('proxyUrl', proxyUrl);
+  localStorage.setItem('affiliateId', affiliateId);
+  closeModal();
+  if (!proxyUrl) {
+    showToast('URLを入力してください');
+    return;
+  }
+  fetchData();
+}
+
+async function fetchData() {
+  document.getElementById('status-text').textContent = '取得中...';
+  try {
+    const res = await fetch(proxyUrl + '?hits=50&sort=date&floor=videoa');
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    
+    const items = json?.result?.items || [];
+    if (!items.length) {
+      showToast('作品がありません');
+      document.getElementById('status-text').textContent = '0件';
+      return;
+    }
+
+    allItems = items.map(item => ({
+      id: item.content_id,
+      title: item.title,
+      actress: (item.iteminfo?.actress || []).map(a => a.name).join('・'),
+      maker: item.iteminfo?.maker?.[0]?.name || '',
+      thumb: item.imageURL?.large || item.imageURL?.list || '',
+      price: parseInt(item.prices?.price || 0),
+      genres: (item.iteminfo?.genre || []).map(g => g.name),
+      url: buildUrl(item.URL)
+    }));
+
+    render(allItems);
+    document.getElementById('status-text').textContent = allItems.length + '件取得';
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+    showToast(allItems.length + '件取得しました');
+  } catch (err) {
+    document.getElementById('status-text').textContent = 'エラー';
+    showToast('取得失敗: ' + err.message);
+  }
+}
+
+function buildUrl(productUrl) {
+  if (!productUrl) return '#';
+  let sp = productUrl
+    .replace('www.dmm.co.jp/digital/videoa', 'video.dmm.co.jp/av/content')
+    .replace('/=/cid=', '/?id=');
+  if (affiliateId) {
+    return 'https://al.dmm.co.jp/?lurl=' + encodeURIComponent(sp) + '&af_id=' + encodeURIComponent(affiliateId) + '&ch=api';
+  }
+  return sp;
+}
+
+function render(items) {
+  const feed = document.getElementById('feed');
+  if (!items.length) {
+    feed.innerHTML = '<div class="empty">該当作品がありません</div>';
+    return;
+  }
+  feed.innerHTML = items.map(item => `
+    <div class="item">
+      <img src="${item.thumb}" onerror="this.src='https://placehold.co/400x700/111/333?text=No+Image'">
+      <div class="overlay"></div>
+      <div class="info">
+        <div class="title">${esc(item.title)}</div>
+        <div class="meta">
+          ${item.actress ? '👤 ' + esc(item.actress) : ''}
+          <span class="price">${item.price === 0 ? '無料' : '¥' + item.price.toLocaleString()}</span>
+        </div>
+        <a class="watch-btn" href="${item.url}" target="_blank">FANZAで視聴する →</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('search').oninput = () => {
+  const q = document.getElementById('search').value.toLowerCase();
+  const genre = document.querySelector('.filter.active').dataset.genre;
+  const filtered = allItems.filter(item => {
+    const matchText = !q || item.title.toLowerCase().includes(q) || item.actress.toLowerCase().includes(q);
+    const matchGenre = genre === 'all' || item.genres.some(g => g.includes(genre));
+    return matchText && matchGenre;
+  });
+  render(filtered);
+};
+
+document.querySelectorAll('.filter').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('search').dispatchEvent(new Event('input'));
+  };
+});
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+// 起動時
+if (proxyUrl) {
+  fetchData();
+} else {
+  setTimeout(openModal, 500);
+}
+</script>
+</body>
+</html>
